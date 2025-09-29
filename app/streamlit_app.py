@@ -13,7 +13,7 @@ from hash_bench.benchmark import run_benchmarks, results_to_rows
 from hash_bench.hashes import SUPPORTED_HASHES
 from hash_bench.avalanche import run_avalanche
 from hash_bench.birthday import find_collision
-from hash_bench.length_extension import try_length_extension, true_hmac_sha256
+from hash_bench.length_extension import try_length_extension, true_hmac_sha256, simulate_length_extension_verification
 from hash_bench.password_hashing import time_bcrypt, time_argon2
 
 st.set_page_config(page_title="Hash Functions Study", layout="wide")
@@ -89,15 +89,26 @@ with birthday_tab:
 
 with length_tab:
     st.subheader("Length Extension (MD5/SHA-1/SHA-256) vs HMAC")
-    algo = st.selectbox("Algorithm", ["md5", "sha1", "sha256"])
+    algo = st.selectbox("Algorithm", ["md5", "sha1", "sha256"])  # demo set
     original = st.text_input("Original message", value="comment=10&uid=5")
     append = st.text_input("Data to append", value="&admin=true")
     secret_len = st.slider("Secret length guess (bytes)", 8, 64, 16)
     if st.button("Attempt Length Extension"):
-        fake_hex = "00" * 32  # placeholder digest; in a real demo you'd use a server-provided digest
+        fake_hex = "00" * 32  # placeholder
         attempt = try_length_extension(fake_hex, original.encode(), append.encode(), secret_len, algorithm=algo)
         if attempt is None:
-            st.warning("hashpumpy not available or algorithm unsupported. Install hashpumpy to run this demo.")
+            st.warning("Falling back to simulation (no external libs).")
+            secret_key = os.urandom(16)
+            attacker_msg, server_hex, extended_hex = simulate_length_extension_verification(
+                original.encode(), append.encode(), secret_key, algorithm=algo, secret_length_guess=secret_len
+            )
+            st.write("Attacker sends:")
+            st.code(attacker_msg.decode('latin1', errors='replace'))
+            st.write("Server H(secret||original):")
+            st.code(server_hex)
+            st.write("Server H(secret||(original||pad||append)):")
+            st.code(extended_hex)
+            st.caption("Length extension lets an attacker forge a longer message's hash if they know the original hash and can guess secret length. HMAC prevents this.")
         else:
             ext_msg, new_hex = attempt
             st.write("Extended message (latin1 shown):")
