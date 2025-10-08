@@ -46,4 +46,4 @@ notebooks/analysis.ipynb # Generate charts for the report
 
 - Uses Python's `hashlib` for MD5, SHA-1/256/512, SHA3, and BLAKE2.
 - The birthday attack uses a toy reduced-space hash to make collisions feasible for demonstration.
-- Length extension uses `hlextend` (pure Python). If you want `hashpumpy`, prefer installing on Linux/WSL due to build requirements.
+- Length extension demo uses built-in simulation (no external dependencies required).
