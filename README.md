@@ -7,6 +7,7 @@ A hands-on project comparing MD5, SHA-1, SHA-256, SHA-3, SHA-512, and BLAKE2. It
 - Birthday-attack simulator on a toy hash (for intuition only)
 - Length extension demo on Merkle–Damgård hashes and HMAC countermeasure
 - Password hashing demo (bcrypt, Argon2) with timing and configuration tips
+- Real-world security analysis with known collision verification, timing attacks, and rainbow table resistance
 - Streamlit dashboard and CLI to run experiments; Jupyter notebook for report-ready plots
 
 ### Quickstart (Windows PowerShell)

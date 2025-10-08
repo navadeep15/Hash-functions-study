@@ -15,16 +15,18 @@ from hash_bench.avalanche import run_avalanche
 from hash_bench.birthday import find_collision
 from hash_bench.length_extension import try_length_extension, true_hmac_sha256, simulate_length_extension_verification
 from hash_bench.password_hashing import time_bcrypt, time_argon2
+from hash_bench.security_demo import verify_collisions, timing_attack_simulation, rainbow_table_simulation, hash_vulnerability_assessment
 
 st.set_page_config(page_title="Hash Functions Study", layout="wide")
 st.title("Comparative Study of Hash Functions")
 
-bench_tab, avalanche_tab, birthday_tab, length_tab, pwd_tab = st.tabs([
+bench_tab, avalanche_tab, birthday_tab, length_tab, pwd_tab, security_tab = st.tabs([
     "Benchmarks",
-    "Avalanche Effect",
+    "Avalanche Effect", 
     "Birthday Attack (Toy)",
     "Length Extension",
     "Password Hashing",
+    "Security Analysis",
 ])
 
 with bench_tab:
@@ -140,3 +142,73 @@ with pwd_tab:
             dfp = pd.DataFrame(rows)
             st.dataframe(dfp)
             st.bar_chart(dfp.set_index("scheme")["hash_ms"])
+
+with security_tab:
+    st.subheader("Real-World Security Analysis")
+    
+    # Vulnerability Assessment
+    st.write("### Hash Algorithm Security Assessment")
+    vulnerabilities = hash_vulnerability_assessment()
+    
+    for algo, info in vulnerabilities.items():
+        with st.expander(f"{algo.upper()} Security Analysis"):
+            col1, col2 = st.columns(2)
+            with col1:
+                st.write(f"**Collision Resistance:** {info['collision_resistance']}")
+                st.write(f"**Preimage Resistance:** {info['preimage_resistance']}")
+                st.write(f"**Year Deprecated:** {info['year_deprecated']}")
+            with col2:
+                st.write(f"**Recommendation:** {info['recommendation']}")
+                st.write(f"**Real-World Impact:** {info['real_world_impact']}")
+    
+    # Real Collision Verification
+    st.write("### Known Collision Verification")
+    if st.button("Verify Real MD5 Collisions"):
+        with st.spinner("Verifying known collision pairs..."):
+            collision_results = verify_collisions()
+            for algo, results in collision_results.items():
+                st.write(f"**{algo.upper()} Collisions:**")
+                for i, (is_collision, hash_info) in enumerate(results):
+                    status = "✅ CONFIRMED" if is_collision else "❌ FAILED"
+                    st.write(f"Pair {i+1}: {status} - {hash_info}")
+    
+    # Timing Attack Simulation
+    st.write("### Timing Attack Simulation")
+    st.write("This demonstrates how different hash algorithms can leak information through timing differences.")
+    test_password = st.text_input("Test Password", value="secret123", key="timing_pwd")
+    attempts = st.slider("Number of attempts", 10, 1000, 100, key="timing_attempts")
+    
+    if st.button("Run Timing Attack Simulation"):
+        with st.spinner("Running timing attack simulation..."):
+            timing_results = timing_attack_simulation(test_password, attempts)
+            df_timing = pd.DataFrame(list(timing_results.items()), columns=["Algorithm", "Time (ms)"])
+            st.dataframe(df_timing)
+            st.bar_chart(df_timing.set_index("Algorithm"))
+            st.caption("Higher times indicate more secure algorithms (harder to time)")
+    
+    # Rainbow Table Simulation
+    st.write("### Rainbow Table Resistance")
+    if st.button("Analyze Rainbow Table Vulnerability"):
+        with st.spinner("Analyzing rainbow table effectiveness..."):
+            rainbow_results = rainbow_table_simulation()
+            df_rainbow = pd.DataFrame(list(rainbow_results.items()), columns=["Hash Type", "Crackable Passwords"])
+            st.dataframe(df_rainbow)
+            st.bar_chart(df_rainbow.set_index("Hash Type"))
+            st.caption("Lower numbers = more secure against rainbow table attacks")
+    
+    # Security Recommendations
+    st.write("### Security Recommendations")
+    st.info("""
+    **For Different Use Cases:**
+    
+    - **File Integrity:** SHA-256 or SHA-3 (never MD5/SHA-1)
+    - **Password Hashing:** bcrypt, Argon2, or scrypt (never raw SHA-256)
+    - **Digital Signatures:** SHA-256 or SHA-3 with proper key management
+    - **HMAC:** SHA-256 or SHA-3 (resists length extension attacks)
+    
+    **Key Takeaways:**
+    - MD5 and SHA-1 are completely broken and should never be used
+    - Always use salt with password hashing
+    - Consider timing attack resistance for authentication systems
+    - Rainbow tables make unsalted hashes vulnerable even if the hash itself is secure
+    """)
